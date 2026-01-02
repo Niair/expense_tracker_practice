@@ -1,6 +1,7 @@
 from fastmcp import FastMCP
 import os
 import aiosqlite  # ← CHANGED: Using aiosqlite instead of sqlite3
+import sqlite3
 import json
 
 DB_PATH = os.path.join(os.path.dirname(__file__), "expenses.db")
@@ -9,12 +10,12 @@ CATEGORIES_PATH = os.path.join(os.path.dirname(__file__), "categories.json")
 mcp = FastMCP("ExpenseTracker")
 
 # ← CHANGED: Made init_db async and added WAL mode for better concurrency
-async def init_db():
-    async with aiosqlite.connect(DB_PATH) as c:
+def init_db():
+    with sqlite3.connect(DB_PATH) as c:
         # Enable WAL mode for better concurrent access
-        await c.execute("PRAGMA journal_mode=WAL")
+        c.execute("PRAGMA journal_mode=WAL")
         
-        await c.execute("""
+        c.execute("""
             CREATE TABLE IF NOT EXISTS expenses(
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 date TEXT NOT NULL,
@@ -25,7 +26,7 @@ async def init_db():
             )
         """)
         
-        await c.execute("""
+        c.execute("""
             CREATE TABLE IF NOT EXISTS income(
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 date TEXT NOT NULL,
@@ -34,12 +35,10 @@ async def init_db():
                 note TEXT DEFAULT ''
             )
         """)
-        await c.commit()
+        c.commit()
 
 # ← CHANGED: Call async init_db at startup
-@mcp.on_startup()
-async def startup():
-    await init_db()
+init_db()
 
 # ==================== ORIGINAL FUNCTIONS (NOW ASYNC) ====================
 
