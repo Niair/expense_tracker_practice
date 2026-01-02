@@ -37,8 +37,9 @@ async def init_db():
         await c.commit()
 
 # ← CHANGED: Call async init_db at startup
-import asyncio
-asyncio.run(init_db())
+@mcp.on_startup()
+async def startup():
+    await init_db()
 
 # ==================== ORIGINAL FUNCTIONS (NOW ASYNC) ====================
 
